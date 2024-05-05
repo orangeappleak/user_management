@@ -3,11 +3,54 @@ from datetime import datetime
 from enum import Enum
 import uuid
 from sqlalchemy import (
-    Column, String, Integer, DateTime, Boolean, func, Enum as SQLAlchemyEnum
+    Column, String, Integer, DateTime, Boolean, ForeignKey, func, Enum as SQLAlchemyEnum
 )
-from sqlalchemy.dialects.postgresql import UUID, ENUM
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import UUID,ENUM
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
+
+class EventCategory(Enum):
+    """Enumeration of event categories."""
+    TECH = "TECH"
+    MUSIC = "MUSIC"
+    FOOD = "FOOD"
+    FASHION = "FASHION"
+    OTHER = "OTHER"
+
+class Event(Base):
+    """
+    Represents an event within the application, corresponding to the 'events' table in the database.
+    This class uses SQLAlchemy ORM for mapping attributes to database columns efficiently.
+    
+    Attributes:
+        id (UUID): Unique identifier for the event.
+        title (str): Title of the event, required.
+        description (str): Description of the event, required.
+        start_date (datetime): Start date and time of the event, required.
+        end_date (datetime): End date and time of the event, required.
+        location (str): Location of the event, required.
+        category (EventCategory): Category of the event, required.
+        created_by (UUID): ID of the user who created the event, required.
+        created_at (datetime): Timestamp when the event was created, set by the server.
+        updated_at (datetime): Timestamp of the last update, set by the server.
+    """
+    __tablename__ = "events"
+    # ... other columns ...
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title: Mapped[str] = Column(String(255), nullable=False)
+    description: Mapped[str] = Column(String(1000), nullable=False)
+    start_date: Mapped[datetime] = Column(DateTime(timezone=True), nullable=False)
+    end_date: Mapped[datetime] = Column(DateTime(timezone=True), nullable=False)
+    location: Mapped[str] = Column(String(255), nullable=False)
+    category: Mapped[EventCategory] = Column(SQLAlchemyEnum(EventCategory, name='EventCategory', create_constraint=True), nullable=False)
+    created_by: Mapped[uuid.UUID] = Column(UUID(as_uuid=True), default=uuid.uuid4)
+    created_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    def __repr__(self) -> str:
+        """Provides a readable representation of an event object."""
+        return f"<Event {self.title}, Category: {self.category.name}>"
+
 
 class UserRole(Enum):
     """Enumeration of user roles within the application, stored as ENUM in the database."""
@@ -51,9 +94,8 @@ class User(Base):
         update_professional_status(status): Updates the professional status and logs the update time.
     """
     __tablename__ = "users"
-    __mapper_args__ = {"eager_defaults": True}
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id :Mapped[uuid.UUID] = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
     nickname: Mapped[str] = Column(String(50), unique=True, nullable=False, index=True)
     email: Mapped[str] = Column(String(255), unique=True, nullable=False, index=True)
     first_name: Mapped[str] = Column(String(100), nullable=True)
@@ -68,12 +110,12 @@ class User(Base):
     last_login_at: Mapped[datetime] = Column(DateTime(timezone=True), nullable=True)
     failed_login_attempts: Mapped[int] = Column(Integer, default=0)
     is_locked: Mapped[bool] = Column(Boolean, default=False)
+    
     created_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     verification_token = Column(String, nullable=True)
     email_verified: Mapped[bool] = Column(Boolean, default=False, nullable=False)
     hashed_password: Mapped[str] = Column(String(255), nullable=False)
-
 
     def __repr__(self) -> str:
         """Provides a readable representation of a user object."""
