@@ -1,4 +1,4 @@
-_from builtins import range
+from builtins import range
 import pytest
 from sqlalchemy import select
 from app.dependencies import get_settings
@@ -20,3 +20,10 @@ async def test_create_event_with_valid_data(db_session, admin_user):
     event = await EventService.create(db_session, event_data, admin_user.id)
     assert event is not None
     assert event.title == event_data["title"]
+    
+async def test_create_event_with_invalid_data(db_session, admin_user):
+    event_data = {
+        "title": "Tech Conference",
+    }
+    event = await EventService.create(db_session, event_data, admin_user.id)
+    assert event is None
