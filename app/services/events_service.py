@@ -62,13 +62,9 @@ class EventService:
             await cls._execute_query(session, query)
             
             updated_event = await cls.get_by_id(session, event_id)
-            if updated_event:
-                session.refresh(updated_event)  # Explicitly refresh the updated user object
-                logger.info(f"Event {event_id} updated successfully.")
-                return updated_event
-            else:
-                logger.error(f"User {event_id} not found after update attempt.")
-            return None
+            session.refresh(updated_event)  # Explicitly refresh the updated user object
+            logger.info(f"Event {event_id} updated successfully.")
+            return updated_event
         except ValidationError as e:
             logger.error(f"Validation error during event update: {e}")
             await session.rollback()
