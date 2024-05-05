@@ -1,4 +1,4 @@
-_from builtins import range
+from builtins import range
 import pytest
 from sqlalchemy import select
 from app.dependencies import get_settings
